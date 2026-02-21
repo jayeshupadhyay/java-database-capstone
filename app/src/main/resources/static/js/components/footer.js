@@ -1,104 +1,115 @@
-/*
-  Function to render the footer content into the page
-      Select the footer element from the DOM
-      Set the inner HTML of the footer element to include the footer content
-  This section dynamically generates the footer content for the web page, including the hospital's logo, copyright information, and various helpful links.
+function renderHeader() {
+  // If on homepage, clear session-ish state
+  if (window.location.pathname.endsWith("/")) {
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("token");
+  }
 
-  1. Insert Footer HTML Content
+  const headerDiv = document.getElementById("header");
+  if (!headerDiv) return;
 
-     * The content is inserted into the `footer` element with the ID "footer" using `footer.innerHTML`.
-     * This is done dynamically via JavaScript to ensure that the footer is properly rendered across different pages.
+  const role = localStorage.getItem("userRole");
+  const token = localStorage.getItem("token");
 
-  2. Create the Footer Wrapper
+  // Invalid session guard
+  if ((role === "loggedPatient" || role === "admin" || role === "doctor") && !token) {
+    localStorage.removeItem("userRole");
+    alert("Session expired or invalid login. Please log in again.");
+    window.location.href = "/";
+    return;
+  }
 
-     * The `<footer>` tag with class `footer` wraps the entire footer content, ensuring that it is styled appropriately.
-       ```html
-       <footer class="footer">
-       ```
+  let headerContent = `
+    <header class="header">
+      <div class="header-left">
+        <img class="logo" src="/assets/images/logo/logo.png" alt="logo" />
+        <span class="brand">Hospital CMS</span>
+      </div>
+      <nav class="header-right">
+  `;
 
-  3. Create the Footer Container
+  if (role === "admin") {
+    headerContent += `
+      <button id="addDocBtn" class="adminBtn">Add Doctor</button>
+      <a href="#" id="logoutBtn">Logout</a>
+    `;
+  } else if (role === "doctor") {
+    headerContent += `
+      <a href="/doctor/dashboard" id="homeBtn">Home</a>
+      <a href="#" id="logoutBtn">Logout</a>
+    `;
+  } else if (role === "patient") {
+    headerContent += `
+      <a href="#" id="loginBtn">Login</a>
+      <a href="#" id="signupBtn">Sign Up</a>
+    `;
+  } else if (role === "loggedPatient") {
+    headerContent += `
+      <a href="/pages/loggedPatientDashboard.html" id="homeBtn">Home</a>
+      <a href="/pages/patientAppointments.html" id="apptBtn">Appointments</a>
+      <a href="#" id="logoutPatientBtn">Logout</a>
+    `;
+  } else {
+    // default (index / unknown)
+    headerContent += `
+      <a href="/pages/patientDashboard.html">Explore Doctors</a>
+    `;
+  }
 
-     * Inside the footer, a container div with the class `footer-container` holds the content to maintain proper alignment and spacing.
-       ```html
-       <div class="footer-container">
-       ```
+  headerContent += `
+      </nav>
+    </header>
+  `;
 
-  4. Add the Hospital Logo and Copyright Info
+  headerDiv.innerHTML = headerContent;
+  attachHeaderButtonListeners();
+}
 
-     * A `footer-logo` div contains the hospital's logo (an image element) and the copyright information.
-       - The `<img>` tag displays the logo, with an `alt` attribute for accessibility.
-       - The copyright text is displayed in a paragraph element.
-       ```html
-       <div class="footer-logo">
-         <img src="../assets/images/logo/logo.png" alt="Hospital CMS Logo">
-         <p>© Copyright 2025. All Rights Reserved by Hospital CMS.</p>
-       </div>
-       ```
+function attachHeaderButtonListeners() {
+  const addDocBtn = document.getElementById("addDocBtn");
+  if (addDocBtn) {
+    addDocBtn.addEventListener("click", () => {
+      // expects openModal() from util/modals layer
+      if (typeof openModal === "function") openModal("addDoctor");
+      else alert("openModal() not found yet.");
+    });
+  }
 
-  5. Create the Links Section
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) logoutBtn.addEventListener("click", logout);
 
-     * A `footer-links` div contains all the links grouped into three sections: Company, Support, and Legals.
-     * This structure helps to organize the footer content and makes it easier for users to find related links.
+  const logoutPatientBtn = document.getElementById("logoutPatientBtn");
+  if (logoutPatientBtn) logoutPatientBtn.addEventListener("click", logoutPatient);
 
-  6. Add the 'Company' Links Column
+  const loginBtn = document.getElementById("loginBtn");
+  if (loginBtn) {
+    loginBtn.addEventListener("click", () => {
+      if (typeof openModal === "function") openModal("login");
+      else alert("Login modal not wired yet.");
+    });
+  }
 
-     * Inside the `footer-links` div, the first column represents company-related links.
-       - The section includes a header (`<h4>Company</h4>`) followed by links for "About", "Careers", and "Press".
-       ```html
-       <div class="footer-column">
-         <h4>Company</h4>
-         <a href="#">About</a>
-         <a href="#">Careers</a>
-         <a href="#">Press</a>
-       </div>
-       ```
+  const signupBtn = document.getElementById("signupBtn");
+  if (signupBtn) {
+    signupBtn.addEventListener("click", () => {
+      if (typeof openModal === "function") openModal("signup");
+      else alert("Signup modal not wired yet.");
+    });
+  }
+}
 
-  7. Add the 'Support' Links Column
+function logout(e) {
+  if (e) e.preventDefault();
+  localStorage.removeItem("token");
+  localStorage.removeItem("userRole");
+  window.location.href = "/";
+}
 
-     * The second column is dedicated to support-related links.
-       - It includes a header (`<h4>Support</h4>`) followed by links for "Account", "Help Center", and "Contact Us".
-       ```html
-       <div class="footer-column">
-         <h4>Support</h4>
-         <a href="#">Account</a>
-         <a href="#">Help Center</a>
-         <a href="#">Contact Us</a>
-       </div>
-       ```
+function logoutPatient(e) {
+  if (e) e.preventDefault();
+  localStorage.removeItem("token");
+  localStorage.setItem("userRole", "patient");
+  window.location.href = "/pages/patientDashboard.html";
+}
 
-  8. Add the 'Legals' Links Column
-
-     * The third column contains legal-related links, such as "Terms & Conditions", "Privacy Policy", and "Licensing".
-       - The header (`<h4>Legals</h4>`) is followed by these links.
-       ```html
-       <div class="footer-column">
-         <h4>Legals</h4>
-         <a href="#">Terms & Conditions</a>
-         <a href="#">Privacy Policy</a>
-         <a href="#">Licensing</a>
-       </div>
-       ```
-
-  9. Close the Footer Container
-
-     * Close the `footer-container` div to ensure proper structure.
-       ```html
-       </div> <!-- End of footer-container -->
-       ```
-
-  10. Close the Footer Element
-
-     * Finally, close the `<footer>` tag to complete the footer section.
-       ```html
-       </footer>
-       ```
-
-  11. Footer Rendering Complete
-
-     * The `footer.innerHTML` code completes the dynamic rendering of the footer by injecting the structured HTML content into the `footer` element on the page.
-
-
-
-  Call the renderFooter function to populate the footer in the page
-
-*/
+renderHeader();
